@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -15,9 +16,7 @@ type Task struct {
 
 func main() {
 	reader := bufio.NewScanner(os.Stdin)
-	taskList := []Task{}
-
-	taskList = append(taskList, Task{ID: 1, Value: "Become a Systems Engineer", IsDone: false})
+	taskList := loadTask()
 
 MainLoop:
 	for {
@@ -58,7 +57,7 @@ MainLoop:
 			pause(reader)
 
 		case 4:
-			fmt.Println("\n💾 Saving feature coming soon...")
+			saveTask(taskList)
 			pause(reader)
 
 		case 5:
@@ -69,7 +68,7 @@ MainLoop:
 	}
 }
 
-// Works on Mac and Linux. Stop using windows man fr.
+// works on mac and linux. stop using windows man fr.
 func clearScreen() {
 	fmt.Print("\033[H\033[2J")
 }
@@ -172,4 +171,32 @@ func listTask(l []Task) {
 		}
 		fmt.Printf("%-4d %-8s %s\n", t.ID, status, t.Value)
 	}
+}
+
+func saveTask(l []Task) {
+	data, err := json.MarshalIndent(l, "", "  ")
+	if err != nil {
+		fmt.Printf("❌ Error writing file: %v \n", err)
+		return
+	}
+	err = os.WriteFile("tasks.json", data, 0644) //linux writing perm 0644
+	if err != nil {
+		fmt.Printf("❌ Error writing file: %v \n", err)
+		return
+	}
+	fmt.Println("\n💾 Saved successfully!")
+}
+
+func loadTask() []Task {
+	data, err := os.ReadFile("tasks.json")
+	if err != nil {
+		fmt.Printf("No saved tasks, loading an empty list: ", err)
+		return []Task{}
+	}
+	var l []Task
+	err = json.Unmarshal(data, &l)
+	if err != nil {
+		return []Task{}
+	}
+	return l
 }
